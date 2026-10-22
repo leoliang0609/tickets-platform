@@ -1,0 +1,8 @@
+node_modules
+.nuxt
+.output
+.data
+dist
+
+# 本機資料（clone 後執行 npm run seed 產生）
+data/db.json
