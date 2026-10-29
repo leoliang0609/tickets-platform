@@ -60,6 +60,8 @@ export interface Ticket {
   assigneeId: string
   /** null 代表未歸屬任何專案 */
   projectId: string | null
+  /** 完成時附上的 PR 網址；null 代表還沒填 */
+  prUrl: string | null
 }
 
 export type NotificationKind =
@@ -118,4 +120,5 @@ export interface TicketInput {
   projectId: string | null
   status?: TicketStatus
   subtasks?: Subtask[]
+  prUrl?: string | null
 }

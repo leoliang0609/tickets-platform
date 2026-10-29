@@ -19,6 +19,7 @@ export async function readDb(): Promise<Database> {
     t.projectId ??= null
     t.deadline ??= null
     t.extensionRequests ??= []
+    t.prUrl ??= null
   }
   assignMissingCodes(db)
   return db

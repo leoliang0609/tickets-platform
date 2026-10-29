@@ -61,10 +61,46 @@ export function sortTickets(list: Ticket[], key: SortKey) {
   return [...list].sort((a, b) => {
     // 已完成的永遠排在最後
     if ((a.status === 'done') !== (b.status === 'done')) return a.status === 'done' ? 1 : -1
-    if (key === 'deadline') return compareDeadline(a, b)
+    if (key === 'deadline') {
+      // 逾期的之間：剛逾期的排前面，逾期很久的沉到後面
+      if (isOverdue(a) && isOverdue(b)) return b.deadline!.localeCompare(a.deadline!)
+      return compareDeadline(a, b)
+    }
     if (key === 'priority') return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || compareDeadline(a, b)
     return b.createdAt.localeCompare(a.createdAt)
   })
+}
+
+/** 依死線分組顯示用；順序就是畫面上的分組順序 */
+export const DEADLINE_GROUPS = [
+  { key: 'overdue', label: '已逾期', tone: 'danger' },
+  { key: 'today', label: '今天到期', tone: 'danger' },
+  { key: 'soon', label: '3 天內到期', tone: 'warn' },
+  { key: 'later', label: '之後', tone: 'muted' },
+  { key: 'none', label: '無死線', tone: 'muted' },
+  { key: 'done', label: '已完成', tone: 'ok' }
+] as const
+export type DeadlineGroup = typeof DEADLINE_GROUPS[number]['key']
+
+export function deadlineGroup(t: Ticket): DeadlineGroup {
+  if (t.status === 'done') return 'done'
+  if (!t.deadline) return 'none'
+  const n = daysUntil(t.deadline)
+  if (n < 0) return 'overdue'
+  if (n === 0) return 'today'
+  return n <= 3 ? 'soon' : 'later'
+}
+
+export type DeadlineFilter = '' | 'overdue' | 'due3' | 'due7' | 'none'
+
+/** 死線篩選：到期類的條件只算未完成的 ticket */
+export function matchesDeadline(t: Ticket, f: DeadlineFilter) {
+  if (!f) return true
+  if (f === 'none') return !t.deadline
+  if (t.status === 'done' || !t.deadline) return false
+  const n = daysUntil(t.deadline)
+  if (f === 'overdue') return n < 0
+  return n >= 0 && n <= (f === 'due3' ? 3 : 7)
 }
 
 /** 用 id 或編號（TK-7F3K9Q、tk7f3k9q、7F3K9Q…）找 ticket */

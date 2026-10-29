@@ -22,7 +22,8 @@ export default defineEventHandler(async (event) => {
       updatedAt: now,
       creatorId: creator.id,
       assigneeId: input.assigneeId!,
-      projectId: input.projectId ?? null
+      projectId: input.projectId ?? null,
+      prUrl: input.prUrl ?? null
     }
     db.tickets.unshift(t)
     notify(db, { userId: t.assigneeId, kind: 'ticket_assigned', ticket: t, actorId: creator.id })

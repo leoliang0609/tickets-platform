@@ -17,7 +17,9 @@ const projectFilter = computed({
 
 type Scope = 'all' | 'mine' | 'created'
 const scope = ref<Scope>('all')
-const statusFilter = ref<TicketStatus | 'active' | ''>('')
+// 預設只看未完成的；已完成的要切換狀態才會出現
+const statusFilter = ref<TicketStatus | 'active' | ''>('active')
+const deadlineFilter = ref<DeadlineFilter>('')
 const keyword = ref('')
 const sortKey = ref<SortKey>('deadline')
 
@@ -57,6 +59,7 @@ const visible = computed(() => {
     if (projectFilter.value && projectFilter.value !== 'none' && t.projectId !== projectFilter.value) return false
     if (statusFilter.value === 'active' && t.status === 'done') return false
     if (statusFilter.value && statusFilter.value !== 'active' && t.status !== statusFilter.value) return false
+    if (!matchesDeadline(t, deadlineFilter.value)) return false
     return matchesKeyword(t, keyword.value)
   })
   const sorted = sortTickets(list, sortKey.value)
@@ -67,6 +70,26 @@ const visible = computed(() => {
 
 // 搜尋的編號存在，但被目前的分頁或篩選條件擋掉
 const hiddenHit = computed(() => codeHit.value && !visible.value.includes(codeHit.value) ? codeHit.value : undefined)
+
+// 依死線排序時分組顯示（逾期、今天、3 天內…），可以收合；搜到編號時不分組，讓它排第一個
+const grouped = computed(() => {
+  if (sortKey.value !== 'deadline' || (codeHit.value && visible.value.includes(codeHit.value))) return null
+  return DEADLINE_GROUPS
+    .map(g => ({ ...g, tickets: visible.value.filter(t => deadlineGroup(t) === g.key) }))
+    .filter(g => g.tickets.length)
+})
+const collapsed = ref<DeadlineGroup[]>([])
+function toggleGroup(key: DeadlineGroup) {
+  collapsed.value = collapsed.value.includes(key) ? collapsed.value.filter(k => k !== key) : [...collapsed.value, key]
+}
+
+const filtersChanged = computed(() => statusFilter.value !== 'active' || !!deadlineFilter.value || !!projectFilter.value || !!keyword.value.trim())
+function resetFilters() {
+  statusFilter.value = 'active'
+  deadlineFilter.value = ''
+  projectFilter.value = ''
+  keyword.value = ''
+}
 
 function onSearchEnter() {
   if (codeHit.value) navigateTo(`/tickets/${codeHit.value.code}`)
@@ -142,6 +165,13 @@ function onSearchEnter() {
           <option value="in_progress">進行中</option>
           <option value="done">已完成</option>
         </select>
+        <select v-model="deadlineFilter" class="select" aria-label="死線">
+          <option value="">所有死線</option>
+          <option value="overdue">已逾期</option>
+          <option value="due3">3 天內到期</option>
+          <option value="due7">7 天內到期</option>
+          <option value="none">無死線</option>
+        </select>
         <select v-model="sortKey" class="select" aria-label="排序">
           <option value="deadline">依死線</option>
           <option value="priority">依優先度</option>
@@ -156,7 +186,21 @@ function onSearchEnter() {
     </div>
 
     <div v-if="status === 'pending' && !tickets.length" class="empty">載入中…</div>
-    <div v-else-if="!visible.length" class="empty">沒有符合條件的 ticket</div>
+    <div v-else-if="!visible.length" class="empty">
+      沒有符合條件的 ticket
+      <button v-if="filtersChanged" class="btn btn-sm reset" @click="resetFilters">清除篩選</button>
+    </div>
+    <template v-else-if="grouped">
+      <section v-for="g in grouped" :key="g.key" class="group">
+        <button class="group-head" :class="`tone-${g.tone}`" :aria-expanded="!collapsed.includes(g.key)" @click="toggleGroup(g.key)">
+          <svg class="chev" :class="{ closed: collapsed.includes(g.key) }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" /></svg>
+          {{ g.label }}<span class="count">{{ g.tickets.length }}</span>
+        </button>
+        <div v-if="!collapsed.includes(g.key)" class="grid">
+          <TicketCard v-for="t in g.tickets" :key="t.id" :ticket="t" />
+        </div>
+      </section>
+    </template>
     <section v-else class="grid">
       <TicketCard v-for="t in visible" :key="t.id" :ticket="t" />
     </section>
@@ -215,6 +259,16 @@ h1 { margin: 0 0 4px; font-size: 26px; font-weight: 700; letter-spacing: -.01em;
   background: var(--surface); border: 1px solid var(--border); color: var(--text-2); font-size: 13px;
 }
 .hidden-hit a { color: var(--accent); font-weight: 600; }
+
+.empty .reset { margin-left: 8px; }
+.group + .group { margin-top: 22px; }
+.group-head {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 4px 6px 4px 2px;
+  border: 0; border-radius: var(--radius-sm); background: none; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.group-head:hover { background: var(--surface); }
+.chev { transition: transform .15s; }
+.chev.closed { transform: rotate(-90deg); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 

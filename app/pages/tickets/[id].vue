@@ -84,6 +84,41 @@ function toggleSubtask(subId: string) {
   save({ subtasks })
 }
 
+// PR 連結：已完成的 ticket 才顯示輸入框；已經填過的話一律顯示連結
+const prEditing = ref(false)
+const prDraft = ref('')
+const prSaving = ref(false)
+const showPr = computed(() => !!ticket.value && (ticket.value.status === 'done' || !!ticket.value.prUrl))
+watch(ticketId, () => { prEditing.value = false; prDraft.value = '' })
+
+function startPrEdit() {
+  prDraft.value = ticket.value?.prUrl ?? ''
+  prEditing.value = true
+}
+
+async function savePr() {
+  prSaving.value = true
+  try {
+    const prUrl = prDraft.value.trim() || null
+    await updateTicket(ticketId.value, { prUrl })
+    prEditing.value = false
+    prDraft.value = ''
+    notify(prUrl ? '已儲存 PR 連結' : '已移除 PR 連結')
+  }
+  catch (e) {
+    notify(apiErrorMessage(e), true)
+  }
+  finally {
+    prSaving.value = false
+  }
+}
+
+/** GitHub PR 網址顯示成「repo PR 123」，其他網址去掉 https:// */
+function prLabel(url: string) {
+  const m = url.match(/github\.com\/[^/]+\/([^/]+)\/pull\/(\d+)/i)
+  return m ? `${m[1]} PR ${m[2]}` : url.replace(/^https?:\/\//i, '')
+}
+
 async function remove() {
   if (!confirm('確定要刪除這個 ticket 嗎？')) return
   try {
@@ -167,6 +202,24 @@ const STATUS_OPTIONS: TicketStatus[] = ['todo', 'in_progress', 'done']
               :class="[`s-${s}`, { active: ticket.status === s }]"
               @click="setStatus(s)"
             >{{ STATUS_LABEL[s] }}</button>
+          </div>
+
+          <div v-if="showPr" class="pr">
+            <h3>PR 連結</h3>
+            <div v-if="ticket.prUrl && !prEditing" class="pr-view">
+              <a :href="ticket.prUrl" target="_blank" rel="noopener noreferrer" class="pr-link" :title="ticket.prUrl">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="6" r="2.5" /><circle cx="6" cy="18" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M6 8.5v7M18 15.5V9a3 3 0 0 0-3-3h-4m0 0 2.5-2.5M11 6l2.5 2.5" /></svg>
+                <span>{{ prLabel(ticket.prUrl) }}</span>
+              </a>
+              <button class="btn btn-sm btn-ghost" @click="startPrEdit">修改</button>
+            </div>
+            <form v-else class="pr-form" @submit.prevent="savePr">
+              <input v-model="prDraft" class="input" type="text" inputmode="url" placeholder="https://github.com/…/pull/123">
+              <div class="pr-actions">
+                <button v-if="ticket.prUrl" type="button" class="btn btn-sm btn-ghost" @click="prEditing = false">取消</button>
+                <button type="submit" class="btn btn-sm btn-primary" :disabled="prSaving || (!prDraft.trim() && !ticket.prUrl)">儲存</button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -298,6 +351,16 @@ h1 { margin: 16px 0 8px; font-size: 24px; line-height: 1.35; font-weight: 700; }
 .status-btn.active.s-todo { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
 .status-btn.active.s-in_progress { background: var(--info-soft); color: var(--info); border-color: var(--info); }
 .status-btn.active.s-done { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+
+.pr { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.pr h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.pr-view { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pr-link { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--accent); font-size: 13px; font-weight: 500; }
+.pr-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-link svg { flex: none; }
+.pr-link:hover span { text-decoration: underline; }
+.pr-form .input { width: 100%; font-size: 13px; }
+.pr-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
 
 dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 12px 14px; align-items: center; }
 dt { font-size: 12px; color: var(--muted); }

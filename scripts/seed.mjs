@@ -31,7 +31,7 @@ const projects = [
 
 const T = (o) => ({
   description: '', subtasks: [], status: 'todo', priority: 'medium', extensionRequests: [],
-  createdAt: at(-7), updatedAt: at(-7), projectId: null, ...o
+  createdAt: at(-7), updatedAt: at(-7), projectId: null, prUrl: null, ...o
 })
 
 const tickets = [
@@ -73,7 +73,8 @@ const tickets = [
   }),
   T({
     id: 't_1012', title: 'Ticket 系統加入通知功能', creatorId: 'u2', assigneeId: 'u1', projectId: 'p_admin',
-    status: 'done', deadline: day(-1), createdAt: at(-8), updatedAt: at(-1)
+    status: 'done', deadline: day(-1), createdAt: at(-8), updatedAt: at(-1),
+    prUrl: 'https://github.com/leoliang0609/tickets-platform/pull/1'
   }),
 
   // ── 指派給 Mia ─────────────────────────────

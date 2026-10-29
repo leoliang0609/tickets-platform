@@ -86,9 +86,9 @@ onBeforeUnmount(() => observer?.disconnect())
         <h2><span class="num">1</span>開始之前</h2>
         <p>畫面最上方的導覽列，從左到右是：</p>
         <ul class="defs">
+          <li><b>☰ 選單</b>：最左邊的按鈕，打開左側選單，裡面有<b>使用教學</b>（就是這一頁）。按 Esc 或點旁邊空白處可以關閉</li>
           <li><b>所有 Ticket</b>：首頁，列出所有工作</li>
           <li><b>專案</b>：依專案查看大家的工作</li>
-          <li><b>使用教學</b>：就是這一頁</li>
           <li><b>目前身分</b>：切換現在是誰在使用</li>
           <li><b>🔔 通知</b>：紅色數字是未讀通知數量</li>
           <li><b>新增 Ticket</b>：建立新的工作</li>
@@ -111,7 +111,13 @@ onBeforeUnmount(() => observer?.disconnect())
           <div><b>指派給我</b><span>你是負責人的 ticket，也就是你要做的事</span></div>
           <div><b>我建立的</b><span>你交辦給別人（或自己）的 ticket</span></div>
         </div>
-        <p>右邊可以再用<b>專案</b>、<b>狀態</b>、<b>關鍵字</b>篩選，並依<b>死線</b>、<b>優先度</b>或<b>建立時間</b>排序。已完成的 ticket 一律排在最後。</p>
+        <p>右邊可以再用<b>專案</b>、<b>狀態</b>、<b>死線</b>（已逾期、3 天內到期、7 天內到期、無死線）、<b>關鍵字</b>篩選，並依<b>死線</b>、<b>優先度</b>或<b>建立時間</b>排序。</p>
+        <ul>
+          <li>狀態預設是<b>未完成</b>，已完成的 ticket 不會顯示；要看的話把狀態改成「所有狀態」或「已完成」</li>
+          <li>依死線排序時會分組：<b>已逾期、今天到期、3 天內到期、之後、無死線、已完成</b>。點組名可以收合，例如先把逾期的收起來，專心看快到期的</li>
+          <li>已逾期的那一組裡，<b>剛逾期的排前面</b>，逾期很久的排後面</li>
+          <li>篩選後沒有結果時，可以按<b>清除篩選</b>回到預設</li>
+        </ul>
         <h3>用編號找 ticket</h3>
         <p>每張 ticket 都有一個不會重複的編號，例如 <b>TK-7F3K9Q</b>。和同事溝通、或寫在程式的 commit 訊息裡，都用這個編號對應 ticket。</p>
         <ul class="defs">
@@ -182,6 +188,7 @@ git log --grep TK-7F3K9Q</pre>
         <p>點一下卡片就會打開 ticket 頁面。</p>
         <div class="table">
           <div><b>更新狀態</b><span>右側「狀態」區塊點<b>待辦／進行中／已完成</b>，馬上儲存</span></div>
+          <div><b>附上 PR 連結</b><span>改成「已完成」後，狀態下方會出現<b>PR 連結</b>欄位，貼上 GitHub 的 PR 網址按<b>儲存</b>。之後可以點連結打開，或按<b>修改</b>更換；清空後儲存就會移除</span></div>
           <div><b>完成子項目</b><span>直接勾選。勾完所有子項目<b>不會</b>自動完成 ticket，記得再把狀態改成「已完成」</span></div>
           <div><b>新增或修改子項目</b><span>按右上角的<b>編輯</b>，在編輯視窗裡新增、改名或刪除</span></div>
           <div><b>修改內容</b><span>同樣在<b>編輯</b>裡改標題、內容、負責人、專案和優先度</span></div>
@@ -280,6 +287,10 @@ git log --grep TK-7F3K9Q</pre>
         <details>
           <summary>子項目都勾完了，ticket 怎麼還沒完成？</summary>
           <p>子項目和 ticket 狀態是分開的。確認工作都完成後，請在 ticket 頁面右側把狀態改成「已完成」。</p>
+        </details>
+        <details>
+          <summary>PR 還在審核中，可以先貼連結嗎？</summary>
+          <p>PR 連結欄位要等 ticket 改成「已完成」才會出現。可以先把網址寫在詳細內容裡，完成後再貼到 PR 連結。已經貼過的連結，就算之後把狀態改回進行中也會保留。</p>
         </details>
         <details>
           <summary>在 ticket 頁面找不到新增子項目的地方？</summary>

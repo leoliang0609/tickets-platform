@@ -11,6 +11,17 @@ export function isDateStr(v: unknown): v is string {
   return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))
 }
 
+function isHttpUrl(v: unknown): v is string {
+  if (typeof v !== 'string' || v.length > 500 || !/^https?:\/\/\S+$/i.test(v)) return false
+  try {
+    new URL(v)
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
 function normalizeSubtasks(list: unknown): Subtask[] {
   if (!Array.isArray(list)) fail('subtasks 必須是陣列')
   return list
@@ -60,6 +71,12 @@ export function validateTicketInput(body: any, db: Database, partial = false): P
   }
   if ('subtasks' in body) {
     out.subtasks = normalizeSubtasks(body.subtasks)
+  }
+  if ('prUrl' in body) {
+    // null / 空字串 = 清除連結
+    const url = typeof body.prUrl === 'string' ? body.prUrl.trim() : body.prUrl
+    if (url && !isHttpUrl(url)) fail('PR 連結需為 http:// 或 https:// 開頭的網址')
+    out.prUrl = url || null
   }
   return out
 }

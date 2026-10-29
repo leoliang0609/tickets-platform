@@ -17,12 +17,17 @@ function onCreated(t: Ticket) {
 
 const isTickets = computed(() => route.path === '/' || route.path.startsWith('/tickets'))
 const isProjects = computed(() => route.path.startsWith('/projects'))
+
+const menuOpen = ref(false)
 </script>
 
 <template>
   <div class="shell">
     <header class="topbar">
       <div class="container bar">
+        <button class="btn btn-ghost btn-icon menu-btn" aria-label="開啟選單" :aria-expanded="menuOpen" @click="menuOpen = true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
         <NuxtLink to="/" class="brand">
           <span class="logo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9a2 2 0 0 0 2-2V5h14v2a2 2 0 0 0 0 4v2a2 2 0 0 0 0 4v2H5v-2a2 2 0 0 0 0-4V9Z" /><path d="M9 9h6M9 13h6" /></svg>
@@ -33,7 +38,6 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
         <nav class="nav">
           <NuxtLink to="/" class="nav-link" :class="{ active: isTickets }">所有 Ticket</NuxtLink>
           <NuxtLink to="/projects" class="nav-link" :class="{ active: isProjects }">專案</NuxtLink>
-          <NuxtLink to="/guide" class="nav-link" active-class="active">使用教學</NuxtLink>
         </nav>
 
         <div class="right">
@@ -69,6 +73,7 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
       @close="closeCreate"
       @saved="onCreated"
     />
+    <SideMenu v-model="menuOpen" />
   </div>
 </template>
 
@@ -80,6 +85,7 @@ const isProjects = computed(() => route.path.startsWith('/projects'))
   border-bottom: 1px solid var(--border);
 }
 .bar { height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.menu-btn { margin-left: -8px; margin-right: -8px; flex: none; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: .01em; }
 .logo {
   display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px;
